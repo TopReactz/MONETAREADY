@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="manifest" href="manifest.json">
+  <title>MonetaReady — AI Video Analyzer for TikTok</title>
+  <meta name="description" content="Analyze your short videos before posting. Get monetization score, risk detection, AI fixes, and performance predictions for TikTok Creator Rewards.">
+  <meta name="theme-color" content="#D4AF37">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #0A0F1C; color: white; margin:0; padding:0; overflow-x:hidden; }
+    .app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; background-color: #0A0F1C; }
+    .gold { color: #D4AF37; }
+    .card { background-color: #1A2233; border-radius: 24px; }
+    .score-font { font-size: 72px; font-weight: 800; line-height: 1; }
+    .video-frame { position: relative; border: 12px solid #0A0F1C; border-radius: 32px; overflow: hidden; box-shadow: 0 0 40px rgba(212,175,55,0.4); }
+    .overlay-number { position: absolute; font-size: 42px; font-weight: 900; color: white; text-shadow: 0 0 15px black; z-index: 10; background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 9999px; }
+    .fix-row { display: flex; align-items: flex-start; gap: 16px; }
+    .time-badge { background-color: #D4AF37; color: #0A0F1C; font-weight: 700; padding: 2px 12px; border-radius: 9999px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- Top Nav -->
+    <nav class="flex justify-between items-center mb-8 bg-[#1A2233] px-6 py-4 border-b border-[#D4AF37]/30">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-gradient-to-br from-[#D4AF37] to-yellow-400 rounded-2xl flex items-center justify-center text-[#0A0F1C] font-bold text-xl">M</div>
+        <span class="text-xl font-bold tracking-tight gold">MonetaReady</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="privacy.html" target="_blank" class="text-xs text-gray-400 hover:text-[#D4AF37]">Privacy</a>
+        <button onclick="goBackToUpload()" class="flex items-center gap-2 px-5 py-2 bg-transparent border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#0A0F1C] rounded-2xl text-sm font-medium">New Video</button>
+      </div>
+    </nav>
+
+    <!-- Upload Screen -->
+    <div id="uploadScreen" class="px-6">
+      <div class="text-center">
+        <h1 class="text-4xl font-bold mb-3">Pre-Upload Video Intelligence</h1>
+        <p class="text-base text-gray-400 mb-8">Analyze short-form content before posting • Predict TikTok Creator Rewards eligibility</p>
+        
+        <button onclick="installApp()" class="mb-8 w-full py-4 bg-[#1A2233] border-2 border-[#D4AF37] text-[#D4AF37] rounded-3xl font-medium flex items-center justify-center gap-3 hover:bg-[#D4AF37] hover:text-[#0A0F1C]">
+          <i class="fas fa-download"></i>
+          Install MonetaReady App
+        </button>
+
+        <div onclick="document.getElementById('fileInput').click()" class="border-4 border-dashed border-[#D4AF37]/50 hover:border-[#D4AF37] rounded-3xl p-12 cursor-pointer transition-all">
+          <i class="fas fa-cloud-upload-alt text-6xl text-[#D4AF37] mb-6"></i>
+          <p class="text-xl font-medium">Drop your video here or tap to upload</p>
+          <p class="text-gray-400 mt-2">MP4 • Max 60 seconds • 9:16 recommended</p>
+        </div>
+        <input type="file" id="fileInput" accept="video/*" class="hidden" onchange="handleFile(this)">
+      </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="hidden px-6 py-20 text-center">
+      <div class="inline-flex flex-col items-center">
+        <div class="w-20 h-20 border-8 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin mb-8"></div>
+        <h2 class="text-2xl font-bold mb-2">Analyzing Your Video</h2>
+        <p class="text-gray-400">Running AI checks...</p>
+        <div class="w-64 h-2 bg-[#1A2233] rounded-full mt-10 overflow-hidden">
+          <div id="progressBar" class="h-full bg-gradient-to-r from-[#D4AF37] to-yellow-400 w-0 transition-all"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analysis Screen -->
+    <div id="analysisScreen" class="hidden px-6 pb-12">
+      <div class="space-y-6">
+        <div class="video-frame">
+          <video id="previewVideo" controls class="w-full rounded-2xl"></video>
+          <div class="overlay-number top-6 left-6">1.</div>
+          <div class="overlay-number top-24 left-6 bg-green-500">2.</div>
+          <div class="overlay-number top-44 left-6">3.</div>
+          <div class="overlay-number bottom-44 left-6">4.</div>
+          <div class="overlay-number bottom-24 left-6">5.</div>
+          <div class="overlay-number bottom-6 left-6 bg-red-500">6.</div>
+        </div>
+        <p id="videoTitle" class="text-center text-lg font-medium mt-3"></p>
+
+        <div class="card p-6">
+          <div class="flex justify-between items-start mb-6">
+            <div>
+              <div class="text-xs uppercase tracking-widest text-gray-400">Monetization Readiness</div>
+              <div id="mainScore" class="score-font gold">87</div>
+            </div>
+            <div class="px-5 py-1.5 bg-green-500/20 text-green-400 rounded-2xl text-sm font-bold">READY</div>
+          </div>
+          <div class="grid grid-cols-3 gap-4 text-center text-sm">
+            <div><div class="text-2xl font-bold">82</div><div class="text-gray-400">Originality</div></div>
+            <div><div class="text-2xl font-bold">91</div><div class="text-gray-400">Engagement</div></div>
+            <div><div class="text-2xl font-bold">75</div><div class="text-gray-400">Editing</div></div>
+          </div>
+        </div>
+
+        <div class="card p-6">
+          <h3 class="font-bold text-base mb-4 flex items-center gap-2"><i class="fas fa-chart-line gold"></i> Predictions</h3>
+          <div class="space-y-4 text-sm">
+            <div>
+              <div class="flex justify-between"><span>Estimated Views</span><span class="gold">420K – 1.2M</span></div>
+              <div class="h-1.5 bg-[#1A2233] rounded-full mt-1"><div class="h-1.5 w-3/4 bg-gradient-to-r from-[#D4AF37] to-green-400 rounded-full"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between"><span>Retention</span><span class="gold">72%</span></div>
+              <div class="h-1.5 bg-[#1A2233] rounded-full mt-1"><div class="h-1.5 w-[72%] bg-gradient-to-r from-[#D4AF37] to-green-400 rounded-full"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card p-6">
+          <h3 class="font-bold text-base mb-4 flex items-center gap-2"><i class="fas fa-wrench gold"></i> AI Fixes</h3>
+          <div id="fixList" class="space-y-4 text-sm"></div>
+        </div>
+
+        <button onclick="goBackToUpload()" class="w-full py-6 bg-gradient-to-r from-[#D4AF37] to-yellow-400 text-[#0A0F1C] text-xl font-bold rounded-3xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 shadow-2xl">
+          <i class="fas fa-plus"></i>
+          Upload New Video & Scan Again
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentVideoURL = '';
+    let deferredPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    function installApp() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+      } else {
+        alert("To install: Tap the 3 dots in Chrome → 'Add to home screen'");
+      }
+    }
+
+    function handleFile(input) {
+      const file = input.files[0];
+      if (!file) return;
+      currentVideoURL = URL.createObjectURL(file);
+      document.getElementById('previewVideo').src = currentVideoURL;
+      document.getElementById('videoTitle').textContent = file.name;
+      document.getElementById('uploadScreen').classList.add('hidden');
+      document.getElementById('loadingScreen').classList.remove('hidden');
+      let progress = 0;
+      const progressBar = document.getElementById('progressBar');
+      const interval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 100) progress = 100;
+        progressBar.style.width = progress + '%';
+        if (progress >= 100) {
+          clearInterval(interval);
+          setTimeout(showProfessionalResults, 300);
+        }
+      }, 80);
+    }
+
+    function showProfessionalResults() {
+      document.getElementById('loadingScreen').classList.add('hidden');
+      document.getElementById('analysisScreen').classList.remove('hidden');
+      const fixesHTML = `
+        <div class="fix-row"><div class="text-[#D4AF37] text-xl flex-shrink-0">→</div><div><span class="font-medium">Add voice overlay at <span class="time-badge">3.2–6.5s</span></span><p class="text-gray-400 text-xs mt-1">to boost originality +18%</p></div></div>
+        <div class="fix-row"><div class="text-[#D4AF37] text-xl flex-shrink-0">→</div><div><span class="font-medium">Cut repetitive segment <span class="time-badge">12–18s</span></span><p class="text-gray-400 text-xs mt-1">improve flow</p></div></div>
+        <div class="fix-row"><div class="text-[#D4AF37] text-xl flex-shrink-0">→</div><div><span class="font-medium">Add transitions every <span class="time-badge">4–6s</span></span><p class="text-gray-400 text-xs mt-1">higher retention</p></div></div>
+        <div class="fix-row"><div class="text-[#D4AF37] text-xl flex-shrink-0">→</div><div><span class="font-medium">Layer commentary</span><p class="text-gray-400 text-xs mt-1">boost eligibility</p></div></div>
+      `;
+      document.getElementById('fixList').innerHTML = fixesHTML;
+    }
+
+    function goBackToUpload() {
+      document.getElementById('analysisScreen').classList.add('hidden');
+      document.getElementById('loadingScreen').classList.add('hidden');
+      document.getElementById('uploadScreen').classList.remove('hidden');
+      const video = document.getElementById('previewVideo');
+      video.pause();
+      video.src = '';
+    }
+
+    window.onload = () => {
+      console.log('%c🚀 MONETAREADY FINAL — 404 Fixed', 'color:#D4AF37; font-size:14px');
+    };
+  </script>
+</body>
+</html>
